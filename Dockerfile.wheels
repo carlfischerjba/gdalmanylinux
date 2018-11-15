@@ -128,6 +128,38 @@ RUN cd /usr/local/src \
     && make -j 4 \
     && make install
 
+# fgdb
+RUN cd /usr/local \
+    && curl -f -L -O http://downloads2.esri.com/Software/FileGDB_API_1_4-64.tar.gz \
+    && tar xzf FileGDB_API_1_4-64.tar.gz \
+    && ln -s /usr/local/FileGDB_API-64/lib/libfgdbunixrtl.so /usr/lib \
+    && ln -s /usr/local/FileGDB_API-64/libi64/libfgdbunixrtl.so /usr/lib64 \
+    && ln -s /usr/local/FileGDB_API-64/lib/libFileGDBAPI.so /usr/lib \
+    && ln -s /usr/local/FileGDB_API-64/lib64/libFileGDBAPI.so /usr/lib64
+
+# libpq
+RUN mkdir -p /src \
+    && cd /src \
+    && curl -f -L -O https://ftp.postgresql.org/pub/source/v9.6.9/postgresql-9.6.9.tar.bz2 \ 
+    && tar xvjf postgresql-9.6.9.tar.bz2 \
+    && cd postgresql-9.6.9 \
+    && ./configure --with-openssl --without-readline \
+    && cd src/interfaces/libpq \
+    && make -j 4 \
+    && make install \
+    && cd - \
+    && cd src/bin/pg_config \
+    && make install \
+    && cd - \
+    && cd src/backend \
+    && make generated-headers \ 
+    && cd - \
+    && cd src/include \
+    && make install \
+    && rm -rf /src \
+    && ln -s /usr/local/pgsql/lib/libpq.so.5 /usr/lib/libpq.so.5 \
+    && ln -s /usr/local/pgsql/lib/libpq.so.5 /usr/lib64/libpq.so.5
+
 # gdal
 RUN mkdir -p /src \
     && cd /src \
@@ -166,6 +198,8 @@ RUN mkdir -p /src \
         --without-python \
         --without-hdf4 \
         --without-hdf5 \
+        --with-fgdb=/usr/local/FileGDB_API-64 \
+        --with-pg=/usr/local/pgsql/bin/pg_config \
     && make -j 4 \
     && make install
 
